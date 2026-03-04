@@ -16,7 +16,7 @@ interface User {
 
 const UsersPage = () => {
   const router = useRouter();
-  const { user: currentUser, isLoading: authLoading } = useAuth();
+  const { user: currentUser, isLoading: authLoading, access_token } = useAuth();
   const { canCreate, canEdit, canDelete, isSuperAdmin } = useCanAccess();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,19 +24,18 @@ const UsersPage = () => {
   const [formData, setFormData] = useState({ email: '', full_name: '', role: 'CLIENT_USER' });
 
   useEffect(() => {
-    if (authLoading || !currentUser) return;
+    if (authLoading || !currentUser || !access_token) return;
     fetchUsers();
-  }, [currentUser, authLoading]);
+  }, [currentUser, authLoading, access_token]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('accessToken');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
       
       const response = await fetch(`${apiUrl}/companies/users/`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${access_token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -56,13 +55,12 @@ const UsersPage = () => {
     if (!formData.email.trim() || !formData.full_name.trim()) return;
 
     try {
-      const token = localStorage.getItem('accessToken');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
       
       const response = await fetch(`${apiUrl}/companies/users/`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${access_token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -76,9 +74,23 @@ const UsersPage = () => {
         setFormData({ email: '', full_name: '', role: 'CLIENT_USER' });
         setShowForm(false);
         fetchUsers();
+      } else {
+        const errorData = await response.json();
+        let errorMessage = 'Error al crear el usuario';
+        
+        if (errorData.email) {
+          errorMessage = Array.isArray(errorData.email) ? errorData.email[0] : errorData.email;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (errorData.detail) {
+          errorMessage = errorData.detail;
+        }
+        
+        alert('❌ ' + errorMessage);
       }
     } catch (error) {
       console.error('Error creating user:', error);
+      alert('❌ Error de conexión');
     }
   };
 

@@ -99,7 +99,7 @@ const AdminUsersPage = () => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
       
-      const response = await fetch(`${apiUrl}/companies/companies/`, {
+      const response = await fetch(`${apiUrl}/companies/`, {
         headers: {
           Authorization: `Bearer ${access_token}`,
           'Content-Type': 'application/json',
@@ -108,7 +108,7 @@ const AdminUsersPage = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setCompanies(Array.isArray(data.results) ? data.results : data);
+        setCompanies(Array.isArray(data) ? data : (Array.isArray(data.results) ? data.results : []));
       }
     } catch (error) {
       console.error('Error fetching companies:', error);
@@ -118,6 +118,11 @@ const AdminUsersPage = () => {
   const handleCreateUser = async () => {
     if (!formData.email.trim() || !formData.full_name.trim()) {
       alert('❌ Por favor completa el email y nombre');
+      return;
+    }
+
+    if (formData.role.startsWith('CLIENT_') && !formData.company_id) {
+      alert('❌ Por favor selecciona una empresa para usuarios cliente');
       return;
     }
 
@@ -160,11 +165,23 @@ const AdminUsersPage = () => {
         await fetchUsers();
         alert('✅ Usuario creado exitosamente');
       } else {
-        alert('❌ Error al crear el usuario');
+        // Parse error message from response
+        const errorData = await response.json();
+        let errorMessage = '❌ Error al crear el usuario';
+        
+        if (errorData.email) {
+          errorMessage = '❌ ' + (Array.isArray(errorData.email) ? errorData.email[0] : errorData.email);
+        } else if (errorData.error) {
+          errorMessage = '❌ ' + errorData.error;
+        } else if (errorData.detail) {
+          errorMessage = '❌ ' + errorData.detail;
+        }
+        
+        alert(errorMessage);
       }
     } catch (error) {
       console.error('Error creating user:', error);
-      alert('❌ Error al crear el usuario');
+      alert('❌ Error de conexión al crear el usuario');
     } finally {
       setIsCreating(false);
     }

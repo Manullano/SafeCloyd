@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { useAuthStore } from '@/stores/auth';
 import { useUIStore } from '@/stores/ui';
 import { useCanAccess } from '@/hooks/useCanAccess';
+import NotificationCenter from './NotificationCenter';
 
 const Navbar = () => {
   const router = useRouter();
@@ -23,9 +24,11 @@ const Navbar = () => {
     if (user.role === 'STAFF_PM') {
       return [
         { name: 'Panel', href: '/dashboard' },
+        { name: '🎯 Kanban', href: '/dashboard/kanban' },
         { name: '📁 Mis Proyectos', href: '/dashboard/staff/projects' },
         { name: '📄 Documentos', href: '/dashboard/documents' },
         { name: '🎫 Tickets', href: '/dashboard/tickets' },
+        { name: '🔐 Auditoría', href: '/dashboard/audit' },
       ];
     }
 
@@ -43,6 +46,7 @@ const Navbar = () => {
     if (user.role?.startsWith('CLIENT_')) {
       return [
         { name: 'Panel', href: '/dashboard/client' },
+        { name: '🎯 Kanban', href: '/dashboard/kanban' },
         { name: '📁 Proyectos', href: '/dashboard/projects' },
         { name: '📄 Documentos', href: '/dashboard/documents' },
         { name: '🎫 Tickets', href: '/dashboard/tickets' },
@@ -58,6 +62,8 @@ const Navbar = () => {
   const navLinks = [
     ...getNavLinks(),
     ...(isSuperAdmin ? [
+      { name: '📊 Analytics', href: '/dashboard/analytics' },
+      { name: '🔎 Auditoría', href: '/dashboard/audit/trail' },
       { name: '⚙️ Administración', href: '/dashboard/settings' },
     ] : []),
   ];
@@ -92,6 +98,8 @@ const Navbar = () => {
           <div className="flex items-center gap-4">
             {user ? (
               <>
+                <NotificationCenter />
+
                 <button
                   onClick={() => router.push('/dashboard/tickets')}
                   className="hidden sm:flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"

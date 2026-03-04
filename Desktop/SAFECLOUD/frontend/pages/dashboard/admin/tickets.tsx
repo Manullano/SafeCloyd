@@ -19,7 +19,7 @@ interface Ticket {
 
 const AdminTicketsPage = () => {
   const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, access_token } = useAuth();
   const { isSuperAdmin } = useCanAccess();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,24 +31,23 @@ const AdminTicketsPage = () => {
   const [assigningTo, setAssigningTo] = useState('');
 
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (authLoading || !user || !access_token) return;
     if (!isSuperAdmin) {
       router.push('/dashboard');
       return;
     }
     fetchTickets();
     fetchStaffUsers();
-  }, [user, authLoading, isSuperAdmin, router]);
+  }, [user, authLoading, isSuperAdmin, router, access_token]);
 
   const fetchTickets = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('accessToken');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
       
       const response = await fetch(`${apiUrl}/tickets/tickets/`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${access_token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -66,12 +65,11 @@ const AdminTicketsPage = () => {
 
   const fetchStaffUsers = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
       
       const response = await fetch(`${apiUrl}/companies/users/?role=STAFF_SUPPORT&role=STAFF_PM`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${access_token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -87,13 +85,12 @@ const AdminTicketsPage = () => {
 
   const handleChangeStatus = async (ticketId: string, newStatus: string) => {
     try {
-      const token = localStorage.getItem('accessToken');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
       
       const response = await fetch(`${apiUrl}/tickets/tickets/${ticketId}/change_status/`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${access_token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ status: newStatus }),
@@ -111,13 +108,12 @@ const AdminTicketsPage = () => {
     if (!assigningTo) return;
 
     try {
-      const token = localStorage.getItem('accessToken');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
       
       const response = await fetch(`${apiUrl}/tickets/tickets/${ticketId}/assign/`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${access_token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ assigned_to: assigningTo }),

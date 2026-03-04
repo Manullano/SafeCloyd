@@ -34,6 +34,13 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'company', 'company_name', 'full_name', 'email', 'role', 'is_active', 'last_login_at', 'created_at', 'password']
         read_only_fields = ['id', 'created_at', 'last_login_at', 'company_name']
 
+    def validate_email(self, value):
+        """Validate that email is unique"""
+        # Check if email already exists (case-insensitive)
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("Este email ya está registrado en el sistema.")
+        return value
+
     def create(self, validated_data):
         password = validated_data.pop('password', None)
         user = User(**validated_data)
@@ -103,13 +110,24 @@ class TicketSerializer(serializers.ModelSerializer):
     assigned_to_name = serializers.CharField(source='assigned_to.full_name', read_only=True)
     company_name = serializers.CharField(source='company.name', read_only=True)
     project_name = serializers.CharField(source='project.name', read_only=True, allow_null=True)
+    assigned_user = serializers.SerializerMethodField(read_only=True)
     events = TicketEventSerializer(many=True, read_only=True)
+    
+    def get_assigned_user(self, obj):
+        """Return assigned user details as nested object"""
+        if obj.assigned_to:
+            return {
+                'id': str(obj.assigned_to.id),
+                'full_name': obj.assigned_to.full_name,
+                'email': obj.assigned_to.email,
+            }
+        return None
     
     class Meta:
         model = Ticket
         fields = ['id', 'company', 'company_name', 'project', 'project_name', 'title', 'description', 
                   'category', 'priority', 'status', 'created_by', 'created_by_name', 'assigned_to', 
-                  'assigned_to_name', 'created_at', 'updated_at', 'events']
+                  'assigned_to_name', 'assigned_user', 'created_at', 'updated_at', 'events']
         read_only_fields = ['id', 'created_at', 'updated_at', 'created_by_name', 'assigned_to_name', 'company_name', 'project_name']
 
 
@@ -141,11 +159,22 @@ class DocumentSerializer(serializers.ModelSerializer):
 class CommentSerializer(serializers.ModelSerializer):
     created_by_name = serializers.CharField(source='created_by.full_name', read_only=True)
     company_name = serializers.CharField(source='company.name', read_only=True)
+    user = serializers.SerializerMethodField(read_only=True)
+    
+    def get_user(self, obj):
+        """Return user details as nested object for compatibility"""
+        if obj.created_by:
+            return {
+                'id': str(obj.created_by.id),
+                'full_name': obj.created_by.full_name,
+                'email': obj.created_by.email,
+            }
+        return None
     
     class Meta:
         model = Comment
-        fields = ['id', 'company', 'company_name', 'entity', 'entity_id', 'content', 'created_by', 'created_by_name', 'created_at']
-        read_only_fields = ['id', 'created_at', 'created_by_name', 'company_name']
+        fields = ['id', 'company', 'company_name', 'entity', 'entity_id', 'content', 'is_internal', 'created_by', 'created_by_name', 'user', 'created_at']
+        read_only_fields = ['id', 'created_at', 'created_by_name', 'company_name', 'user']
 
 
 # ============= Audit =============

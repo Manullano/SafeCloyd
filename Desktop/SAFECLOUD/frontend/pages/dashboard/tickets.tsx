@@ -8,7 +8,7 @@ import { useRouter } from 'next/router';
 
 const TicketsPage = () => {
   const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, access_token } = useAuth();
   const { canCreate, canEdit } = useCanAccess();
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,19 +16,18 @@ const TicketsPage = () => {
   const [formData, setFormData] = useState({ title: '', description: '', priority: 'MEDIA' });
 
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (authLoading || !user || !access_token) return;
     fetchTickets();
-  }, [user, authLoading]);
+  }, [user, authLoading, access_token]);
 
   const fetchTickets = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('accessToken');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
       
       const response = await fetch(`${apiUrl}/tickets/tickets/`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${access_token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -48,13 +47,12 @@ const TicketsPage = () => {
     if (!formData.title.trim()) return;
 
     try {
-      const token = localStorage.getItem('accessToken');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
       
       const response = await fetch(`${apiUrl}/tickets/tickets/`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${access_token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

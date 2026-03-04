@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from safecloud_api.apps.companies.models import Project, Task
 from safecloud_api.core.serializers import ProjectSerializer, TaskSerializer
 from safecloud_api.core.utils import log_audit_event
+from safecloud_api.core.plan_validator import PlanValidator
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -20,6 +21,20 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         if request.user.role not in ['SUPERADMIN', 'CLIENT_ADMIN']:
             return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # ✅ Validar límites de plan para crear proyecto activo
+        company = request.user.company
+        allowed, error_msg = PlanValidator.check_project_limit(company)
+        if not allowed:
+            log_audit_event(
+                actor_user=request.user,
+                action='PROJECT_CREATION_FAILED',
+                company=company,
+                ip=request.META.get('REMOTE_ADDR'),
+                user_agent=request.META.get('HTTP_USER_AGENT'),
+                data={'reason': 'Plan limit exceeded'}
+            )
+            return Response({'error': error_msg}, status=status.HTTP_400_BAD_REQUEST)
         
         data = request.data.copy()
         data['company'] = request.user.company.id

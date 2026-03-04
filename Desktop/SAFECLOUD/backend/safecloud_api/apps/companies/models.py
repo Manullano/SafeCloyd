@@ -287,6 +287,7 @@ class Comment(models.Model):
     entity = models.CharField(max_length=50, choices=ENTITY_TYPES)
     entity_id = models.UUIDField()
     content = models.TextField()
+    is_internal = models.BooleanField(default=False, help_text='Solo visible para staff')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
