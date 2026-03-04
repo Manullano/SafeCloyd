@@ -33,7 +33,7 @@ const Navbar = () => {
     if (user.role === 'STAFF_SUPPORT') {
       return [
         { name: 'Panel', href: '/dashboard' },
-        { name: '🎫 Tickets', href: '/dashboard/tickets' },
+        { name: '🎫 Panel de Soporte', href: '/dashboard/staff/tickets' },
         { name: '📄 Documentos', href: '/dashboard/documents' },
         { name: '💬 Comentarios', href: '/dashboard' },
       ];
@@ -42,7 +42,7 @@ const Navbar = () => {
     // CLIENT_ADMIN, CLIENT_USER, CLIENT_VIEWER
     if (user.role?.startsWith('CLIENT_')) {
       return [
-        { name: 'Panel', href: '/dashboard' },
+        { name: 'Panel', href: '/dashboard/client' },
         { name: '📁 Proyectos', href: '/dashboard/projects' },
         { name: '📄 Documentos', href: '/dashboard/documents' },
         { name: '🎫 Tickets', href: '/dashboard/tickets' },

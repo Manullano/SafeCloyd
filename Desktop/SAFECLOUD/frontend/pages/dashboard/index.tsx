@@ -27,6 +27,12 @@ const DashboardPage = () => {
       return;
     }
     
+    // Redirect CLIENT users to their specific dashboard
+    if (user.role?.startsWith('CLIENT_')) {
+      router.push('/dashboard/client');
+      return;
+    }
+    
     setLoading(false);
   }, [user, authLoading, router]);
 
